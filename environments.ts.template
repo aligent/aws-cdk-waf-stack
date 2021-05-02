@@ -1,0 +1,74 @@
+import { Environment } from '@aws-cdk/core'
+
+// Run this from your workstation once to allow cross-account deployment between the accounts
+// $ env CDK_NEW_BOOTSTRAP=1 npx cdk bootstrap \
+//     --profile <ProfileNameOfTargetAccount> \
+//     --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
+//     --trust <ToolsAccountId> \
+//     aws://<TargetAccountId>/<region> 
+
+const toolAccountEnv: Environment = {account: '<ToolsAccountId>', region: 'ap-southeast-2'}; 
+const preprodEnv: Environment = {account: '<ClientPreprodAccount>', region: 'ap-southeast-2'};  // Update this line
+const prodEnv: Environment = {account: '<ClientProdAccount>', region: 'ap-southeast-2'};    // Update this line
+
+const client = '<ClientName>';  // Update this line
+const appName = 'WAF';
+
+const defaultAllowedIPs = [
+]
+
+export const preproduction_config = {
+    envname: client + '-' + appName + '-preprod',
+    // BitBucket repository details
+    owner: '<OwnerName>', 
+    repo: '<RepoName>', // Update this line
+    branch: 'preproduction',    // Update this line when needed
+    connectionArn: '<ArnOfMainAccount>',
+    env: toolAccountEnv,
+    manualApprovals: true,  // Switch to false if you want to disable CFN approval step
+    stageConfig: {
+        ResourceProps: {
+            envname: client + '-' + appName + '-preprod',
+            WafProps: {
+                activate: boolean,  // Update this line with either true or false, defining Block mode or Count-only mode, respectively.  
+                allowedIPs: defaultAllowedIPs.concat([
+                    'z.z.z.z/32' // AWS NAT GW of test-vpc
+                    // environment-speicific allow-list comes here as comma-separated strings
+                ]),
+                allowedUserAgents: [],  // Allowed User-Agent list that would have been blocked by AWS BadBot rule. Case-sensitive. Optional.
+                excludedAwsRules: [],   // The rule to exclude (override) from AWS-managed RuleSet. Optional.
+                associatedLoadBalancerArn: '<arn_of_preproduction_FE_ALB>'  // Update this line
+            },
+            env: preprodEnv,
+        },
+        envname: client + '-' + appName + '-preprod',
+    }
+}
+
+export const production_config = {
+    envname: client + '-' + appName + '-prod',
+    // BitBucket repository details
+    owner: '<OwnerName>', 
+    repo: '<RepoName>', // Update this line
+    branch: 'production',    // Update this line when needed
+    connectionArn: '<ArnOfMainAccount>',
+    env: toolAccountEnv,
+    manualApprovals: true,  // For safety, leave this as true for production 
+    stageConfig: {
+        ResourceProps: {
+            envname: client + '-' + appName + '-prod',
+            WafProps: {
+                activate: false,
+                allowedIPs: defaultAllowedIPs.concat([
+                    'z.z.z.z/32' // AWS NAT GW of live-vpc
+                    // environment-speicific allow-list comes here as comma-separated strings
+                ]),
+                allowedUserAgents: [],  // Allowed User-Agent list that would have been blocked by AWS BadBot rule. Case-sensitive. Optional.
+                excludedAwsRules: [],   // The rule to exclude (override) from AWS-managed RuleSet. Optional.
+                associatedLoadBalancerArn: '<arn_of_production_FE_ALB>'  // Update this line
+            },
+            env: prodEnv,
+        },
+        envname: client + '-' + appName + '-prod',
+    }
+}

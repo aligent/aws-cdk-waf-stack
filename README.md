@@ -20,7 +20,7 @@ This repository defines a Node module for two AWS CDK stack modules which can be
 
 2. WAFStack
 
-    If you don't need a pipeline or Cross-account deployment, just use this WAFStack module.
+    If you don't need a pipeline or Cross-account deployment, just use this stack. See Step9 in the next section for further information.
 
 ## How to use: Creating a new WAFPipelineStack project
 
@@ -60,6 +60,10 @@ Install cdk first (`npm install -g aws-cdk`, or [this instruction](https://docs.
 
 4. Install this node module
 
+        $ npm install git+https://github.com/aligent/aws-cdk-waf-stack.git
+
+    If you want to pin down to a specific version:
+
         $ npm install git+https://github.com/aligent/aws-cdk-waf-stack.git#<commit/tag>
 
 5. Replace project files
@@ -77,20 +81,20 @@ Install cdk first (`npm install -g aws-cdk`, or [this instruction](https://docs.
 
 7. Update `bin/waf.ts` if needed, e.g. additional environments or stack name changes.
 
-8. Run `npm install` and update `cdk.json`
+8. Run `npm install` and update `cdk.json`:
 
     - `app`: replace `<project_name.ts>` with `waf.ts`.
     - `context`: add `"@aws-cdk/core:newStyleStackSynthesis": true`
 
 9. Rebuild `cdk.context.json` (not needed in this project/stack)
 
-10. Test by running `npx cdk synth` and `npx cdk ls`. For further testing and customisation, refer to the **Local development** section below.
+10. Test by running `npx cdk synth` and `npx cdk ls`. For further testing and customisation, refer to the **Local development** section below. By now you are going to see two stacks per each environment; one for Pipeline deployment, the other for direct deployment. See Step 12 down below.
 
 11. Push the code to the relevant branch
 
-12. Deploy the stack, e.g. `npx cdk deploy <target-WAF-environment> --profile <ToolsAccountProfile>` to create the CodePipeline, followed by TargetAccount WAF resource creation
+12. Deploy the stack, e.g. `npx cdk deploy <target-WAF-environment> --profile <ToolsAccountProfile>` to create the CodePipeline, followed by TargetAccount WAF resource creation. 
 
-
+    If you don't need a pipeline/cross-account deployment, deploy `<target-WAF-environment>/<target-WAF-environment>/stack` directly to the target account by `npx cdk deploy <StackName> --profile <TargetAccountProfile>`
 
 ## Monitor and activate
 By default, WebACL this stack creates will work in COUNT mode to begin with.After a certain period of monitoring under real traffic and load, apply necessary changes, e.g. IP allow_list or rate limit, to avoid service interruptions before switching to BLOCK mode.

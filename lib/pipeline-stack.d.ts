@@ -4,7 +4,7 @@ interface PipelineStageProps extends StageProps {
     envname: string;
     ResourceProps: ResourceProps;
 }
-interface PipeplineProps extends StackProps {
+interface PipelineProps extends StackProps {
     envname: string;
     owner: string;
     repo: string;
@@ -14,6 +14,6 @@ interface PipeplineProps extends StackProps {
     manualApprovals: boolean;
 }
 export declare class PipelineStack extends Stack {
-    constructor(scope: Construct, id: string, props: PipeplineProps);
+    constructor(scope: Construct, id: string, props: PipelineProps);
 }
 export {};

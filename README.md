@@ -24,7 +24,7 @@ This repository defines a Node module for two AWS CDK stack modules which can be
 
 ## How to use: Creating a new WAFPipelineStack project
 
-> **_NOTE:_** npm ver.7 will cause an issue a later stage hence ver.6 is highly recommended.
+> **_NOTE:_** npm ver.7 will cause an issue a later stage hence ver.6 is required until this issue is resolved: https://github.com/npm/cli/issues/2610
 
 Install cdk first (`npm install -g aws-cdk`, or [this instruction](https://docs.aws.amazon.com/cdk/latest/guide/getting_started.html)) and follow the steps described below.
 

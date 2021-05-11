@@ -9,7 +9,7 @@ interface PipelineStageProps extends StageProps {
     ResourceProps: ResourceProps,
 }
 
-interface PipeplineProps extends StackProps {
+interface PipelineProps extends StackProps {
     envname: string;
     owner: string;
     repo: string;
@@ -29,7 +29,7 @@ class PipelineStage extends Stage{
 
 // The stack that defines the application pipeline
 export class PipelineStack extends Stack {
-    constructor(scope: Construct, id: string, props: PipeplineProps) {
+    constructor(scope: Construct, id: string, props: PipelineProps) {
     super(scope, id, props);
 
     const sourceArtifact = new codepipeline.Artifact();

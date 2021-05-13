@@ -43,21 +43,6 @@ Install cdk first (`npm install -g aws-cdk`, or [this instruction](https://docs.
                 --trust <ToolsAccountId> \
                 aws://<TargetAccountId>/<region>
 
-    If MFA is mandated for AWS-CLI access, use this two-step approach instead:
-
-        $ env CDK_NEW_BOOTSTRAP=1 npx cdk bootstrap \
-            --profile <TargetAccountProfile> \
-            --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
-            --trust <ToolsAccountId> \
-            --show-template \
-            aws://<TargetAccountId>/<region> \
-            > bootstrap-template.yaml
-
-        $ aws cloudformation --profile <ProfileNameOfTargetAccount> create-stack \
-            --stack-name CDKToolkit \
-            --template-body file://bootstrap-template.yaml\
-            --capabilities CAPABILITY_NAMED_IAM
-
 4. Install this node module
 
         $ npm install git+https://github.com/aligent/aws-cdk-waf-stack.git

@@ -53,3 +53,6 @@ Thumbs.db
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+
+*.d.ts
+*.js

@@ -2,27 +2,22 @@
 
 ## Overview
 
-This repository defines a Node module for two AWS CDK stack modules which can be included into an environment.
+This repository defines a Node module for a AWS CDK stack module which can be included into an environment.
 
-1. WAFPipelineStack with Cross-account deployment
+## How to use: Creating a new WAFStack with automated build pipeline
+Please note the following instructions rely on [@aligent/aws-cdk-pipeline-stack](https://github.com/aligent/aws-cdk-pipeline-stack) which provides automated stack deployments based on AWS CodePipelines. The pipelines portions can be disregarded if you would prefer to only deploy the WAF stack.
 
-    This stack configures an AWS CodePipeline application which will deploy an instance of the WAFStack based on changes to the configured repository/branch.
-    There are two AWS accounts involved: ToolsAccount and TargetAccount, where we don't want the TargetAccount to access to the whole version control system, e.g. BitBucket or GitHub, as they currently can't limit the access to repository level.
+This stack configures an AWS CodePipeline application which will deploy an instance of the WAFStack based on changes to the configured repository/branch.
+There are two AWS accounts involved: ToolsAccount and TargetAccount, where we don't want the TargetAccount to access to the whole version control system, e.g. BitBucket or GitHub, as they currently can't limit the access to repository level.
 
-    ![Diagram](CdkPipelineCrossAccountDeploy.jpeg)
+![Diagram](CdkPipelineCrossAccountDeploy.jpeg)
 
-    1. Configure a CDK project on your local, run `cdk deploy` to create a CodePipeline in ToolsAccount via CloudFormation
-    2. Push the project code to the repository/branch
-    3. CodePipeline Source stage picks up the change in the repository/branch and initiate the pipeline
-    4. CodePipeline Deploy stage initiates Target Account Cloudformation stack creation/update
-    5. TargetAccount's CloudFormation creates/configures/updates WAF resources
+1. Configure a CDK project on your local, run `cdk deploy` to create a CodePipeline in ToolsAccount via CloudFormation
+2. Push the project code to the repository/branch
+3. CodePipeline Source stage picks up the change in the repository/branch and initiate the pipeline
+4. CodePipeline Deploy stage initiates Target Account Cloudformation stack creation/update
+5. TargetAccount's CloudFormation creates/configures/updates WAF resources
 
-
-2. WAFStack
-
-    If you don't need a pipeline or Cross-account deployment, just use this stack. See Step9 in the next section for further information.
-
-## How to use: Creating a new WAFPipelineStack project
 
 > **_NOTE:_** npm ver.7 will cause an issue a later stage hence ver.6 is required until this issue is resolved: https://github.com/npm/cli/issues/2610
 
@@ -45,11 +40,8 @@ Install cdk first (`npm install -g aws-cdk`, or [this instruction](https://docs.
 
 4. Install this node module
 
-        $ npm install git+https://github.com/aligent/aws-cdk-waf-stack.git
-
-    If you want to pin down to a specific version:
-
-        $ npm install git+https://github.com/aligent/aws-cdk-waf-stack.git#<commit/tag>
+        $ npm install @aligent/aws-cdk-waf-stack
+        $ npm install @aligent/aws-cdk-pipeline-stack
 
 5. Replace project files
 

@@ -9,20 +9,15 @@ interface WafProps extends StackProps {
   associatedLoadBalancerArn: string;
 }
 
-export interface ResourceProps extends StackProps {
-  envname: string;
-  WafProps: WafProps
-}
-
 export class WAFStack extends Stack {
-  constructor(scope: Construct, id: string, props: ResourceProps) {
+  constructor(scope: Construct, id: string, props: WafProps) {
     super(scope, id, props);
 
     const finalRules: wafv2.CfnWebACL.RuleProperty[] = [];
 
     // IP Allowlist
-    const allowed_ips = new wafv2.CfnIPSet(this, 'IPSet', {
-      addresses: props.WafProps.allowedIPs,
+    const allowed_ips = new wafv2.CfnIPSet(this, id + '-IPSet', {
+      addresses: props.allowedIPs,
       ipAddressVersion: 'IPV4',
       scope: 'REGIONAL',
       description: 'IPAllowlist'+this.stackName
@@ -70,9 +65,9 @@ export class WAFStack extends Stack {
     finalRules.push(allow_src_ip_rule)
 
     // UserAgent Allowlist - only when the parameter is present
-    if (props.WafProps.allowedUserAgents){
-      const allowed_user_agent = new wafv2.CfnRegexPatternSet(this, 'UserAgent', {
-        regularExpressionList: props.WafProps.allowedUserAgents,
+    if (props.allowedUserAgents){
+      const allowed_user_agent = new wafv2.CfnRegexPatternSet(this, id + '-UserAgent', {
+        regularExpressionList: props.allowedUserAgents,
         scope: 'REGIONAL',
         description: 'UserAgentAllowlist'+this.stackName
       })
@@ -103,15 +98,15 @@ export class WAFStack extends Stack {
     // Activate the rules or not
     let overrideAction: object = { count: {} }
     let action: object = { count: {} }
-    if ( props.WafProps.activate == true ) {
+    if ( props.activate == true ) {
       overrideAction = { none: {} }
       action = { block: {} }
     }
 
     // Exclude specific rules from AWS Core Rule Group - only when the parameter is present
     const excludedAwsRules: wafv2.CfnWebACL.ExcludedRuleProperty[] = [];
-    if (props.WafProps.excludedAwsRules){
-      props.WafProps.excludedAwsRules.forEach( ruleName => {
+    if (props.excludedAwsRules){
+      props.excludedAwsRules.forEach( ruleName => {
         excludedAwsRules.push({
           name: ruleName
         });
@@ -181,7 +176,7 @@ export class WAFStack extends Stack {
     }
     finalRules.push(rate_limit_rule)
 
-    const web_acl = new wafv2.CfnWebACL(this, 'WebAcl', {
+    const web_acl = new wafv2.CfnWebACL(this, id + '-WebAcl', {
       name: this.stackName,
       defaultAction: { allow: {} },
       scope: 'REGIONAL',
@@ -193,10 +188,10 @@ export class WAFStack extends Stack {
       rules: finalRules
     })
 
-    new wafv2.CfnWebACLAssociation(this, 'ALBAssociation', {
+    new wafv2.CfnWebACLAssociation(this, id + '-ALBAssociation', {
       // If the application stack has had the ALB ARN exported, importValue could be used as below:
       // resourceArn: cdk.Fn.importValue("WAFTestALB"),
-      resourceArn: props.WafProps.associatedLoadBalancerArn,
+      resourceArn: props.associatedLoadBalancerArn,
       webAclArn: web_acl.attrArn
     })
   }

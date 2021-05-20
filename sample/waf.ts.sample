@@ -37,6 +37,7 @@ export const preProductionPipelineStackProps = {
 }
 
 export const preProductionWafStackProps = {
+    env: preprodEnv,
     activate: true,  // Update this line with either true or false, defining Block mode or Count-only mode, respectively.  
     allowedIPs: defaultAllowedIPs.concat([
         'y.y.y.y/32' // AWS NAT GW of preprod vpc
@@ -48,4 +49,4 @@ export const preProductionWafStackProps = {
 }
 
 const app = new cdk.App();
-new PipelineStack(app, envName, preProductionPipelineStackProps,(scope: Construct): void => {new WAFStack(scope, envName , preProductionWafStackProps)});
+new PipelineStack(app, envName + '-pipeline', preProductionPipelineStackProps,(scope: Construct): void => {new WAFStack(scope, envName, preProductionWafStackProps)});

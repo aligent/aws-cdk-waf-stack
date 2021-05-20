@@ -16,7 +16,7 @@ export class WAFStack extends Stack {
     const finalRules: wafv2.CfnWebACL.RuleProperty[] = [];
 
     // IP Allowlist
-    const allowed_ips = new wafv2.CfnIPSet(this, 'IPSet', {
+    const allowed_ips = new wafv2.CfnIPSet(this, id + '-IPSet', {
       addresses: props.allowedIPs,
       ipAddressVersion: 'IPV4',
       scope: 'REGIONAL',
@@ -66,7 +66,7 @@ export class WAFStack extends Stack {
 
     // UserAgent Allowlist - only when the parameter is present
     if (props.allowedUserAgents){
-      const allowed_user_agent = new wafv2.CfnRegexPatternSet(this, 'UserAgent', {
+      const allowed_user_agent = new wafv2.CfnRegexPatternSet(this, id + '-UserAgent', {
         regularExpressionList: props.allowedUserAgents,
         scope: 'REGIONAL',
         description: 'UserAgentAllowlist'+this.stackName
@@ -176,7 +176,7 @@ export class WAFStack extends Stack {
     }
     finalRules.push(rate_limit_rule)
 
-    const web_acl = new wafv2.CfnWebACL(this, 'WebAcl', {
+    const web_acl = new wafv2.CfnWebACL(this, id + '-WebAcl', {
       name: this.stackName,
       defaultAction: { allow: {} },
       scope: 'REGIONAL',
@@ -188,7 +188,7 @@ export class WAFStack extends Stack {
       rules: finalRules
     })
 
-    new wafv2.CfnWebACLAssociation(this, 'ALBAssociation', {
+    new wafv2.CfnWebACLAssociation(this, id + '-ALBAssociation', {
       // If the application stack has had the ALB ARN exported, importValue could be used as below:
       // resourceArn: cdk.Fn.importValue("WAFTestALB"),
       resourceArn: props.associatedLoadBalancerArn,

@@ -4,6 +4,7 @@ import * as wafv2 from '@aws-cdk/aws-wafv2';
 interface WafProps extends StackProps {
   activate?: boolean;
   allowedIPs: string[];
+  allowedPaths?: string[];
   allowedUserAgents?: string[];
   excludedAwsRules?: string[];
   associatedLoadBalancerArn: string;
@@ -23,9 +24,43 @@ export class WAFStack extends Stack {
       description: 'IPAllowlist'+this.stackName
     })
 
+    if (props.allowedPaths) {
+         // Path Allowlist
+         const allowed_paths = new wafv2.CfnRegexPatternSet(this, id + '-PathSet', {
+           regularExpressionList: props.allowedPaths,
+           scope: 'REGIONAL',
+           description: 'PathAllowList'+this.stackName
+         })
+
+         const allow_path_rule = {
+           name: 'allow_path_rule',
+           priority: 0,
+           statement: {
+             regexPatternSetReferenceStatement: {
+               arn: allowed_paths.attrArn,
+               fieldToMatch: {
+                    uriPath: {}
+               },
+               textTransformations: [{
+                    priority: 0,
+                    type: 'NONE'
+               }]
+             }
+           },
+           action: { allow: {} },
+           visibilityConfig: {
+               cloudWatchMetricsEnabled: true,
+               metricName: this.stackName+'AllowPathRule',
+               sampledRequestsEnabled: true
+           }
+         }
+         finalRules.push(allow_path_rule)
+    }
+
+
     const allow_xff_ip_rule = {
       name: 'allow_xff_ip_rule',
-      priority: 0,
+      priority: 1,
       statement: {
         ipSetReferenceStatement: {
           arn: allowed_ips.attrArn,
@@ -48,7 +83,7 @@ export class WAFStack extends Stack {
 
     const allow_src_ip_rule = {
       name: 'allow_src_ip_rule',
-      priority: 1,
+      priority: 2,
       statement: {
         ipSetReferenceStatement: {
           arn: allowed_ips.attrArn
@@ -74,7 +109,7 @@ export class WAFStack extends Stack {
 
       const allow_user_agent_rule = {
         name: 'allow_user_agent_rule',
-        priority: 2,
+        priority: 3,
         statement: {
           regexPatternSetReferenceStatement: {
             arn: allowed_user_agent.attrArn,

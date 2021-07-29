@@ -5,6 +5,7 @@ interface WafProps extends StackProps {
   activate?: boolean;
   allowedIPs: string[];
   allowedPaths?: string[];
+  rateLimit: number;
   allowedUserAgents?: string[];
   excludedAwsRules?: string[];
   associatedLoadBalancerArn: string;
@@ -199,7 +200,7 @@ export class WAFStack extends Stack {
           forwardedIpConfig: {
             fallbackBehavior : 'MATCH',
             headerName : 'X-Forwarded-For'},
-          limit: 5*60*1 // Rate-based rule inspects 5-minute time span. Therefore, 5*60*1 means one requsts per second on average.
+            limit: props.rateLimit
           }
       },
       action: action,

@@ -1,3 +1,3 @@
-import { WAFStack } from "./lib/waf-stack"
+import { WebApplicationFirewall, WebApplicationFirewallProps } from "./lib/waf"
 
-export { WAFStack };
+export { WebApplicationFirewall, WebApplicationFirewallProps};

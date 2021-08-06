@@ -1,22 +1,21 @@
-# Aligent AWS WAF stack
+# Aligent AWS WAF
 
 ## Overview
 
-This repository defines a CDK stack for provisioning an AWS Web Application Firewall (WAF) stack. It can be imported and used within CDK application.
+This repository defines a CDK construct for provisioning an AWS Web Application Firewall (WAF) stack. It can be imported and used within CDK application.
 ##Example
-The following CDK snippet can be used to provision the AWS WAF stack.
+The following CDK snippet can be used to provision the an AWS WAF stack.
 
 ```
 import 'source-map-support/register';
 const cdk = require('@aws-cdk/core');
-import { WAFStack } from '@aligent/aws-waf-stack';
-import { Construct } from '@aws-cdk/core';
+import { WebApplicationFirewall } from '@aligent/cdk-waf';
+import { Stack } from '@aws-cdk/core';
 
 
 import { Environment } from '@aws-cdk/core'
 import { env } from 'node:process';
 
-const toolsAccountEnv: Environment = {account: '<ToolsAccountId>', region: '<ToolsAccountRegion>'}; 
 const preprodEnv: Environment = {account: '<TargetAccountId-Preprod>', region: '<TargetAccountRegion-Preprod>'};
 
 const target = '<TargetAccountIdentifier>';
@@ -36,10 +35,18 @@ env: preprodEnv,
      ]),
      allowedUserAgents: [],  // Allowed User-Agent list that would have been blocked by AWS BadBot rule. Case-sensitive. Optional.
      excludedAwsRules: [],   // The rule to exclude (override) from AWS-managed RuleSet. Optional.
-     associatedLoadBalancerArn: '<ArnOfPreproductionFrontendALB>'
+     associatedLoadBalancerArn: '<ArnOfPreproductionFrontendALB>',
+     wafName: <NAME>
 }
 
-const app = new cdk.App();
+class WAFStack extends Stack {
+  constructor(scope: Construct, id: string, props: preprodEnv) {
+    super(scope, id, props);
+
+    new WebApplicationFirewall(scope, 'waf-stack', prod);
+  }
+}
+
 new WAFStack(scope, envName, preProductionWafStackProps);
 ```
 

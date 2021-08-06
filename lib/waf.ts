@@ -1,31 +1,66 @@
-import { Construct, Stack, StackProps, StageProps, Stage, } from '@aws-cdk/core';
+import { Construct } from '@aws-cdk/core';
 import * as wafv2 from '@aws-cdk/aws-wafv2';
 
-interface WafProps extends StackProps {
+export interface WebApplicationFirewallProps {
   activate?: boolean;
   allowedIPs: string[];
+  allowedPaths?: string[];
+  rateLimit: number;
   allowedUserAgents?: string[];
   excludedAwsRules?: string[];
   associatedLoadBalancerArn: string;
+  wafName: string;
 }
 
-export class WAFStack extends Stack {
-  constructor(scope: Construct, id: string, props: WafProps) {
-    super(scope, id, props);
+export class WebApplicationFirewall extends Construct {
+  constructor(scope: Construct, id: string, props: WebApplicationFirewallProps) {
+    super(scope, id);
 
     const finalRules: wafv2.CfnWebACL.RuleProperty[] = [];
 
     // IP Allowlist
-    const allowed_ips = new wafv2.CfnIPSet(this, id + '-IPSet', {
+    const allowed_ips = new wafv2.CfnIPSet(this, 'IPSet', {
       addresses: props.allowedIPs,
       ipAddressVersion: 'IPV4',
-      scope: 'REGIONAL',
-      description: 'IPAllowlist'+this.stackName
+      scope: 'REGIONAL'
     })
+
+    if (props.allowedPaths) {
+         // Path Allowlist
+         const allowed_paths = new wafv2.CfnRegexPatternSet(this, 'PathSet', {
+           regularExpressionList: props.allowedPaths,
+           scope: 'REGIONAL'
+         })
+
+         const allow_path_rule = {
+           name: 'allow_path_rule',
+           priority: 0,
+           statement: {
+             regexPatternSetReferenceStatement: {
+               arn: allowed_paths.attrArn,
+               fieldToMatch: {
+                    uriPath: {}
+               },
+               textTransformations: [{
+                    priority: 0,
+                    type: 'NONE'
+               }]
+             }
+           },
+           action: { allow: {} },
+           visibilityConfig: {
+               cloudWatchMetricsEnabled: true,
+               metricName: 'AllowPathRule',
+               sampledRequestsEnabled: true
+           }
+         }
+         finalRules.push(allow_path_rule)
+    }
+
 
     const allow_xff_ip_rule = {
       name: 'allow_xff_ip_rule',
-      priority: 0,
+      priority: 1,
       statement: {
         ipSetReferenceStatement: {
           arn: allowed_ips.attrArn,
@@ -39,7 +74,7 @@ export class WAFStack extends Stack {
       action: { allow: {} },
       visibilityConfig: {
           cloudWatchMetricsEnabled: true,
-          metricName: this.stackName+'AllowXFFIPRule',
+          metricName: 'AllowXFFIPRule',
           sampledRequestsEnabled: true
       }
     }
@@ -48,7 +83,7 @@ export class WAFStack extends Stack {
 
     const allow_src_ip_rule = {
       name: 'allow_src_ip_rule',
-      priority: 1,
+      priority: 2,
       statement: {
         ipSetReferenceStatement: {
           arn: allowed_ips.attrArn
@@ -57,7 +92,7 @@ export class WAFStack extends Stack {
       action: { allow: {} },
       visibilityConfig: {
           cloudWatchMetricsEnabled: true,
-          metricName: this.stackName+'_allow_src_ip_rule',
+          metricName: 'allow_src_ip_rule',
           sampledRequestsEnabled: true
       }
     }
@@ -66,15 +101,14 @@ export class WAFStack extends Stack {
 
     // UserAgent Allowlist - only when the parameter is present
     if (props.allowedUserAgents){
-      const allowed_user_agent = new wafv2.CfnRegexPatternSet(this, id + '-UserAgent', {
+      const allowed_user_agent = new wafv2.CfnRegexPatternSet(this, 'UserAgent', {
         regularExpressionList: props.allowedUserAgents,
-        scope: 'REGIONAL',
-        description: 'UserAgentAllowlist'+this.stackName
+        scope: 'REGIONAL'
       })
 
       const allow_user_agent_rule = {
         name: 'allow_user_agent_rule',
-        priority: 2,
+        priority: 3,
         statement: {
           regexPatternSetReferenceStatement: {
             arn: allowed_user_agent.attrArn,
@@ -88,7 +122,7 @@ export class WAFStack extends Stack {
         action: { allow: {} },
         visibilityConfig: {
             cloudWatchMetricsEnabled: true,
-            metricName: this.stackName+'_allow_user_agent_rule',
+            metricName: 'allow_user_agent_rule',
             sampledRequestsEnabled: true
       }}
 
@@ -127,7 +161,7 @@ export class WAFStack extends Stack {
       overrideAction: overrideAction,
       visibilityConfig: {
           cloudWatchMetricsEnabled: true,
-          metricName: this.stackName+'_common_rule_set',
+          metricName: 'common_rule_set',
           sampledRequestsEnabled: true
       }
     }
@@ -148,7 +182,7 @@ export class WAFStack extends Stack {
       overrideAction: overrideAction,
       visibilityConfig: {
           cloudWatchMetricsEnabled: true,
-          metricName: this.stackName+'_php_rule_set',
+          metricName: 'php_rule_set',
           sampledRequestsEnabled: true
       }
     }
@@ -164,31 +198,31 @@ export class WAFStack extends Stack {
           forwardedIpConfig: {
             fallbackBehavior : 'MATCH',
             headerName : 'X-Forwarded-For'},
-          limit: 5*60*1 // Rate-based rule inspects 5-minute time span. Therefore, 5*60*1 means one requsts per second on average.
+            limit: props.rateLimit
           }
       },
       action: action,
       visibilityConfig: {
         cloudWatchMetricsEnabled: true,
-        metricName: this.stackName+'_rate_limit_rule',
+        metricName: 'rate_limit_rule',
         sampledRequestsEnabled: true
       }
     }
     finalRules.push(rate_limit_rule)
 
-    const web_acl = new wafv2.CfnWebACL(this, id + '-WebAcl', {
-      name: this.stackName,
+    const web_acl = new wafv2.CfnWebACL(this, 'WebAcl', {
+      name: props.wafName,
       defaultAction: { allow: {} },
       scope: 'REGIONAL',
       visibilityConfig: {
         cloudWatchMetricsEnabled: true,
-        metricName: this.stackName+'WebAcl',
+        metricName: 'WebAcl',
         sampledRequestsEnabled: true,
       },
       rules: finalRules
     })
 
-    new wafv2.CfnWebACLAssociation(this, id + '-ALBAssociation', {
+    new wafv2.CfnWebACLAssociation(this, 'ALBAssociation', {
       // If the application stack has had the ALB ARN exported, importValue could be used as below:
       // resourceArn: cdk.Fn.importValue("WAFTestALB"),
       resourceArn: props.associatedLoadBalancerArn,

@@ -25,6 +25,30 @@ export class WebApplicationFirewall extends Construct {
       scope: 'REGIONAL'
     })
 
+    // Implement AWSManagedRulesKnownBadInputsRuleSet
+    const bad_actors_rule_set = {
+      name: 'bad_actors_rule',
+      priority: 0,
+      overrideAction: { none: {} },
+      statement: {
+          managedRuleGroupStatement: {
+              name: 'AWSManagedRulesKnownBadInputsRuleSet',
+              vendorName: 'AWS',
+              excludedRules: [
+                   {name: 'Host_localhost_HEADER'},
+                   {name: 'PROPFIND_METHOD'},
+                   {name: 'ExploitablePaths_URIPATH'}
+              ]
+          }
+      },
+      visibilityConfig: {
+          cloudWatchMetricsEnabled: true,
+          metricName: 'bad_actors_rule',
+          sampledRequestsEnabled: true
+      }
+    }
+    finalRules.push(bad_actors_rule_set)
+
     if (props.allowedPaths) {
          // Path Allowlist
          const allowed_paths = new wafv2.CfnRegexPatternSet(this, 'PathSet', {
@@ -34,7 +58,7 @@ export class WebApplicationFirewall extends Construct {
 
          const allow_path_rule = {
            name: 'allow_path_rule',
-           priority: 0,
+           priority: 1,
            statement: {
              regexPatternSetReferenceStatement: {
                arn: allowed_paths.attrArn,
@@ -60,7 +84,7 @@ export class WebApplicationFirewall extends Construct {
 
     const allow_xff_ip_rule = {
       name: 'allow_xff_ip_rule',
-      priority: 1,
+      priority: 2,
       statement: {
         ipSetReferenceStatement: {
           arn: allowed_ips.attrArn,
@@ -83,7 +107,7 @@ export class WebApplicationFirewall extends Construct {
 
     const allow_src_ip_rule = {
       name: 'allow_src_ip_rule',
-      priority: 2,
+      priority: 3,
       statement: {
         ipSetReferenceStatement: {
           arn: allowed_ips.attrArn
@@ -108,11 +132,11 @@ export class WebApplicationFirewall extends Construct {
 
       const allow_user_agent_rule = {
         name: 'allow_user_agent_rule',
-        priority: 3,
+        priority: 4,
         statement: {
           regexPatternSetReferenceStatement: {
             arn: allowed_user_agent.attrArn,
-            fieldToMatch: { singleHeader: { name: 'User-Agent' }},
+            fieldToMatch: { singleHeader: { Name: 'User-Agent' }},
             textTransformations: [ {
               priority: 0,
               type: 'NONE'

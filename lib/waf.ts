@@ -22,7 +22,8 @@ export class WebApplicationFirewall extends Construct {
     const allowed_ips = new wafv2.CfnIPSet(this, 'IPSet', {
       addresses: props.allowedIPs,
       ipAddressVersion: 'IPV4',
-      scope: 'REGIONAL'
+      scope: 'REGIONAL',
+      description: props.wafName
     })
 
     // Implement AWSManagedRulesKnownBadInputsRuleSet

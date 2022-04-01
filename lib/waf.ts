@@ -10,6 +10,7 @@ export interface WebApplicationFirewallProps {
   excludedAwsRules?: string[];
   associatedLoadBalancerArn: string;
   wafName: string;
+  blockNonBypassed?: boolean; //Block all requests which are not bypassed by another rule
 }
 
 export class WebApplicationFirewall extends Construct {
@@ -234,6 +235,38 @@ export class WebApplicationFirewall extends Construct {
       }
     }
     finalRules.push(rate_limit_rule)
+
+    if (props.blockNonBypassed) {
+         // Path Allowlist
+         const wildcard_path = new wafv2.CfnRegexPatternSet(this, 'WildcardPathSet', {
+           regularExpressionList: ['/.*'],
+           scope: 'REGIONAL'
+         })
+
+         const block_all_paths_rule = {
+           name: 'block_all_paths_rule',
+           priority: 100,
+           statement: {
+             regexPatternSetReferenceStatement: {
+               arn: wildcard_path.attrArn,
+               fieldToMatch: {
+                    uriPath: {}
+               },
+               textTransformations: [{
+                    priority: 0,
+                    type: 'NONE'
+               }]
+             }
+           },
+           action: { block: {} },
+           visibilityConfig: {
+               cloudWatchMetricsEnabled: true,
+               metricName: 'BlockAllPathsRule',
+               sampledRequestsEnabled: true
+           }
+         }
+         finalRules.push(block_all_paths_rule)
+    }
 
     const web_acl = new wafv2.CfnWebACL(this, 'WebAcl', {
       name: props.wafName,

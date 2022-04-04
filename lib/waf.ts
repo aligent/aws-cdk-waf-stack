@@ -10,6 +10,7 @@ export interface WebApplicationFirewallProps {
   excludedAwsRules?: string[];
   associatedLoadBalancerArn: string;
   wafName: string;
+  blockByDefault?: boolean;
 }
 
 export class WebApplicationFirewall extends Construct {
@@ -235,9 +236,11 @@ export class WebApplicationFirewall extends Construct {
     }
     finalRules.push(rate_limit_rule)
 
+    const defaultAction = props.blockByDefault ? { block: {} }  : { allow: {} };
+
     const web_acl = new wafv2.CfnWebACL(this, 'WebAcl', {
       name: props.wafName,
-      defaultAction: { allow: {} },
+      defaultAction: defaultAction,
       scope: 'REGIONAL',
       visibilityConfig: {
         cloudWatchMetricsEnabled: true,

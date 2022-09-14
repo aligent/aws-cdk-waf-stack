@@ -1,5 +1,8 @@
 # Aligent AWS WAF
 
+## Archived
+Further updates can be found here https://github.com/aligent/cdk-constructs/tree/main/packages/waf 
+
 ## Overview
 
 This repository defines a CDK construct for provisioning an AWS Web Application Firewall (WAF) stack. It can be imported and used within CDK application.
